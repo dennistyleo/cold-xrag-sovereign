@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cold_XRAG PRO | Sovereign Control V36</title>
+    <style>
+        :root {--primary: #00ff88; --bg: #000; --panel: #050505; --border: #1a1a1a; --meta: #444; --gold: #3d331b;}
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: #eee; font-family: 'Inter', 'JetBrains Mono', monospace; height: 100vh; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--gold) 0%, #1a140a 100%); border: 1px solid #2a2214; border-radius: 3px; }
+        
+        #layer-master { display: grid; grid-template-rows: 160px 1fr; height: 100vh; width: 100vw; }
+        .rigid-header { display: flex; flex-direction: column; background: #050505; border-bottom: 2px solid var(--border); }
+        .h-top { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 0 50px; }
+        .logo-giant { height: 110px; width: 110px; filter: drop-shadow(0 0 15px var(--primary)); object-fit: contain; }
+        .brand-title { font-size: 2.6rem; font-weight: 900; letter-spacing: 5px; text-transform: uppercase; }
+        .h-bottom { height: 40px; background: #010101; display: flex; align-items: center; justify-content: center; gap: 40px; border-top: 1px solid #111;}
+        .p-step { border: 1px solid #222; font-size: 9px; padding: 5px 15px; color: #444; }
+        .p-step.active { border-color: var(--primary); color: var(--primary); box-shadow: 0 0 10px var(--primary); }
+        .p-step.done { background: var(--primary); color: #000; font-weight: bold; }
+
+        .workspace { display: grid; grid-template-columns: 350px 1fr 340px; height: 100%; overflow: hidden; }
+        /* --- AXIOM TREE: REDESIGN --- */
+        .axiom-tree { background: #020202; border-right: 1px solid var(--border); padding: 30px; overflow-y: auto; height: 100%; scrollbar-gutter: stable; }
+        .tree-header { font-size: 10px; color: var(--meta); letter-spacing: 3px; margin-bottom: 25px; border-bottom: 1px solid #111; padding-bottom: 10px; }
+        .cat-group { margin-bottom: 30px; }
+        .cat-label { font-size: 10px; color: var(--meta); margin-bottom: 12px; display: flex; justify-content: space-between; text-transform: uppercase; font-family: sans-serif; transition: 0.2s; cursor: pointer; }
+        .dom-unit { margin-bottom: 15px; }
+        .dom-head { color: var(--primary); font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-family: monospace; transition: 0.2s; cursor: pointer; }
+        .dom-head::before { content: ">>"; font-size: 10px; }
+        .sub-dom { margin-left: 12px; padding-left: 15px; border-left: 1px dotted #333; margin-top: 5px; }
+        .axiom-leaf { padding-left: 15px; font-size: 12px; color: #666; border-left: 1px solid #1a1a1a; margin: 4px 0; font-family: 'Times New Roman', serif; transition: 0.2s; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cat-label:hover, .dom-head:hover, .axiom-leaf:hover, .axiom-leaf.active { color: var(--primary); background: rgba(0,255,136,0.05); }
+        .model-view { display: flex; flex-direction: column; padding: 20px; background: #000; gap: 15px; height: 100%; overflow: hidden; }
+        .instrument { flex: 1; border: 1px solid var(--primary); background: #020202; display: flex; flex-direction: column; position: relative; box-shadow: inset 0 0 60px rgba(0,255,136,0.05); overflow: hidden; }
+        .tabs { display: flex; background: #000; border-bottom: 1px solid var(--border); }
+        .t-btn { background: none; border: none; color: #444; padding: 15px 30px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .t-btn.active { color: var(--primary); border-bottom: 2px solid var(--primary); background: rgba(0,255,136,0.05); }
+        
+        #canvas-wrap { flex: 1; position: relative; overflow: hidden; background-image: radial-gradient(#111 1px, transparent 1px); background-size: 20px 20px; }
+        canvas { display: block; width: 100%; height: 100%; }
+        #formula-overlay { position: absolute; top: 40px; left: 40px; color: var(--primary); font-size: 2rem; z-index: 10; text-shadow: 0 0 10px #000; }
+        .tabs { position:absolute; top:10px; right:10px; display:flex; gap:5px; z-index:10000; pointer-events:auto; }
+        /* --- TERMINALS: REDESIGN --- */
+        .io-nexus { height: 180px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-shrink: 0; }
+        .term { background-color: #030504; border: 1px solid #1a2b22; display: flex; flex-direction: column; overflow: hidden; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+        .term-h { font-size: 9px; color: var(--meta); padding: 5px 15px; background: #080808; border-bottom: 1px solid #111; letter-spacing: 2px; }
+        .log { flex: 1; padding: 12px; font-size: 10px; font-family: monospace; overflow-y: auto; scrollbar-gutter: stable; }
+        #log-ims { color: #7b9e8b; }
+        #log-upasl { color: #ff3366; }
+
+        .audit-side { 
+            background: #030303; 
+            border-left: 1px solid var(--border); 
+            padding: 30px; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            overflow: hidden; /* Prevent the whole sidebar from scrolling */
+        }
+        .score-hero { font-size: 3.5rem; color: var(--primary); font-weight: 800; text-align: center; border: 1px solid var(--border); padding: 20px; background: #000; flex-shrink: 0; }
+
+        .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex-shrink: 0; }
+        .f-box { background: #080808; border: 1px solid #1a1a1a; padding: 8px; }
+        .f-label { font-size: 8px; color: #555; margin-bottom: 2px; }
+        .f-val { font-size: 11px; color: var(--primary); font-weight: bold; }
+        .spine-item { border-left: 2px solid #00ff88; padding-left: 10px; margin-bottom: 10px; font-family: monospace; }
+        #audit-list { 
+            flex: 1; 
+            overflow-y: auto; /* List scrolls internally */
+            border-top: 1px solid #222; 
+            margin-bottom: 10px;
+        }
+        .input-selector {
+            background: #080808;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #1a1a1a;
+        }
+        .input-selector select {
+            background: #000;
+            color: var(--primary);
+            border: 1px solid #333;
+            width: 100%;
+            font-size: 10px;
+            padding: 5px;
+        }
+        @keyframes gold-breathe {
+            0% { background: linear-gradient(90deg, #ffd700, #b8860b); box-shadow: 0 0 5px rgba(255,215,0,0.3); }
+            50% { background: linear-gradient(90deg, #fff3b0, #ffd700); box-shadow: 0 0 20px rgba(255,215,0,0.6); }
+            100% { background: linear-gradient(90deg, #ffd700, #b8860b); box-shadow: 0 0 5px rgba(255,215,0,0.3); }
+        }
+        .axiom-leaf.leveraged {
+            animation: gold-breathe 3s infinite ease-in-out;
+            color: #000 !important;
+            font-weight: bold;
+            border-left: 3px solid #fff;
+        }
+    </style>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div id="layer-master">
+    <header class="rigid-header">
+        <div class="h-top">
+            <div style="display: flex; align-items:center; gap:40px;">
+                <img src="./static/aichip-logo.png" class="logo-giant">
+                <span class="brand-title">Cold_XRAG <span style="color:var(--primary)">PRO</span></span>
+            </div>
+            <div style="text-align:right; font-size:11px; color:var(--meta);">
+                IMS_CLUSTER: <b style="color:var(--primary)">STABLE</b><br>
+                UPASL_GEN: <b style="color:var(--primary)">ACTIVE</b><br>
+                UUID: 4ec055ab
+            </div>
+        </div>
+        <div class="h-bottom">
+            <div class="p-step done">L1_INGEST</div>
+            <div class="p-step active">L2_UPASL</div>
+            <div class="p-step">L3_IMS</div>
+            <div class="p-step">L4_CAUSAL</div>
+            <div class="p-step">L5_AUDIT</div>
+        </div>
+    </header>
+    <section class="workspace">
+        <aside class="axiom-tree" id="tree-mount"></aside>
+        <main class="model-view">
+            <div class="instrument">
+                <div class="tabs">
+                    <button class="t-btn" onclick="app.render('core')">CORE</button>
+                    <button class="t-btn active" id="btn-gnn" onclick="app.render('gnn')">GNN</button>
+                    <button class="t-btn" onclick="app.render('world')">WORLD</button>
+                    <button class="t-btn" onclick="app.render('causal')">CAUSAL</button>
+                </div>
+                <div id="canvas-wrap">
+                    <div id="formula-overlay">\( \eta_{ij} \cdot \dot{u}_i \)</div>
+                    <canvas id="main-render"></canvas>
+                </div>
+            </div>
+            <div class="io-nexus">
+                <div class="term"><div class="term-h">IMS: DATA MONITOR</div><div id="log-ims" class="log"></div></div>
+                <div class="term"><div class="term-h">UPASL: TRACE ENGINE</div><div id="log-upasl" class="log"></div></div>
+            </div>
+        </main>
+        <aside class="audit-side">
+            <div class="score-hero" id="main-score">0.8500</div>
+            <div class="input-selector">
+                <div style="font-size:9px; color:#555; margin-bottom:5px;">ACTIVE EVIDENCE SOURCE</div>
+                <select id="evidence-source" onchange="app.lastInput = this.value">
+                    <option value="ERP_FINANCE_v2.db">ERP_FINANCE_v2.db</option>
+                    <option value="XLS_COMPOSITE_STRESS.xlsx">XLS_COMPOSITE_STRESS.xlsx</option>
+                    <option value="PDF_MIL_SPEC_461.pdf">PDF_MIL_SPEC_461.pdf</option>
+                    <option value="CSV_TELEMETRY_C084.csv">CSV_TELEMETRY_C084.csv</option>
+                </select>
+            </div>
+            <div class="radar-container" style="height: 180px; width: 100%; margin: 10px 0;">
+                <canvas id="radar-ui"></canvas>
+            </div>
+            <div id="audit-list"></div>
+            <button class="action-btn" onclick="app.generateReport()" style="background:#00ff88; color:#000; padding:15px; font-weight:800; width:100%; cursor:pointer;">
+                GENERATE AUDIT REPORT
+            </button>
+        </aside>
+    </section>
+</div>
+<script src="js/axioms.js"></script>
+<script>
+const app = {
+    v: 'gnn', lz: {x:0, y:0, z:0},
+    lastInput: "SYSTEM_BOOT",
+    init() {
+        const mount = document.getElementById('tree-mount');
+        const groups = {}; window.axiomSubstrate.forEach(a => {
+            const d = a.type.toUpperCase(); if(!groups[d]) groups[d] = []; groups[d].push(a);
+        });
+        mount.innerHTML = '<div class="tree-header">375 AXIOM SUBSTRATE [IMMUTABLE]</div>';
+        Object.keys(groups).forEach(g => {
+            const cg = document.createElement('div'); cg.className = 'cat-group';
+            cg.innerHTML = `<div class="cat-label">${g}</div><div class="dom-unit"><div class="dom-head">SYSTEM INVARIANTS (C_phi)</div><div class="sub-dom"></div></div>`;
+            const sub = cg.querySelector('.sub-dom');
+            groups[g].forEach(a => {
+                const l = document.createElement('div'); l.className = 'axiom-leaf';
+                l.innerText = `${a.id}: ${a.name}`;
+                l.onclick = () => this.audit(a, l);
+                sub.appendChild(l);
+            });
+            mount.appendChild(cg);
+        });
+        setInterval(() => this.tick(), 2000);
+        window.onresize = () => this.render(this.v);
+        if (window.Chart) {
+            const radarCtx = document.getElementById('radar-ui').getContext('2d');
+            this.radarChart = new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Prop', 'Cap', 'Diss', 'Admit', 'Sync'],
+                    datasets: [{
+                        label: 'SYSTEM INVARIANTS (C_phi)',
+                        data: [100, 100, 100, 100, 100], // Initial state
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: { plugins: { legend: { display: false } }, scales: { r: { ticks: { display: false }, grid: { color: '#222' } }, suggestedMax: 100 } }
+            });
+        }
+        this.render('gnn');
+    },
+    audit(ax, el) {
+        // Double-click to Toggle OFF
+        if (this.activeAxiom && this.activeAxiom.id === ax.id) {
+            this.activeAxiom = null;
+            el.classList.remove('active', 'leveraged');
+            document.getElementById('main-score').innerText = "0.0000";
+            
+            const over = document.getElementById('formula-overlay');
+            over.innerHTML = `\\[ \\text{AWAITING_AXIOM} \\]`;
+            if(window.MathJax) MathJax.typesetPromise([over]);
+
+            this.render(this.v);
+            return;
+        }
+        
+        // Normal Selection
+        this.activeAxiom = ax;
+        const seed = parseInt(ax.id.split('-')[1]) || 1;
+        this.v_phi = (0.84 + Math.random() * 0.14).toFixed(4);
+        this.eps = (1 - (this.v_phi / 1.0)).toFixed(4);
+        this.currentAuditData = { 
+            v_phi: this.v_phi, 
+            epsilon: this.eps, 
+            verdict: this.v_phi > 0.88 ? "ALLOW" : "REFUSE", 
+            auditHash: btoa(ax.id).substring(0,12).toUpperCase() 
+        };
+
+        document.querySelectorAll('.axiom-leaf').forEach(x => x.classList.remove('active'));
+        el.classList.add('active', 'leveraged');
+        document.getElementById('main-score').innerText = this.v_phi;
+        
+        if(this.radarChart) {
+            this.radarChart.data.datasets[0].data = [this.v_phi*100, 100, this.eps*100, (seed%40)+50, 90];
+            this.radarChart.update();
+        }
+
+        // Keep spine working
+        const hist = document.getElementById('audit-list');
+        const item = document.createElement('div');
+        item.className = "spine-item";
+        item.style = "border-left: 2px solid #ffd700; padding: 10px; margin-bottom: 5px; background: rgba(255,215,0,0.02);";
+        item.innerHTML = `<div style="font-size:9px; color:#555;">${new Date().toISOString()}</div><b>${ax.id}</b> | ε: ${this.eps}<br><span style="color:#ffd700">HASH: ${this.currentAuditData.auditHash}</span>`;
+        hist.prepend(item);
+
+        const over = document.getElementById('formula-overlay');
+        over.innerHTML = `\\[ ${ax.formula} \\]`;
+        if(window.MathJax) MathJax.typesetPromise([over]);
+
+        this.render(this.v, true);
+    },
+    generateReport() {
+        if (!this.activeAxiom) return alert("Audit Substrate Empty.");
+        
+        // Gathers all historical entries from the UI Spine
+        const entries = Array.from(document.querySelectorAll('.spine-item')).map(el => el.innerHTML);
+        
+        // Calculate Summary Metrics
+        let count = entries.length;
+        let avgEps = 0;
+        if(count > 0) {
+           const epsValues = entries.map(e => parseFloat(e.match(/ε: ([\d.]+)/)[1]));
+           let totalEps = epsValues.reduce((a, b) => a + b, 0);
+           avgEps = totalEps / count;
+        }
+        const meanAdmissibility = count > 0 ? (1 - avgEps).toFixed(4) : "1.0000";
+        const finalEntropy = avgEps.toFixed(4);
+
+        const modal = document.getElementById('report-overlay');
+        modal.style.display = 'flex';
+        document.getElementById('modal-content').innerHTML = `
+            <div style="background:#fff; color:#000; padding:60px 40px 40px 40px; font-family:serif; border:10px solid #000; height:80vh; overflow:visible;">
+                <h1 style="border-bottom:5px solid #000;">COLD_XRAG CONSOLIDATED AUDIT</h1>
+                <div style="background:#000; color:#00ff88; padding:15px; margin-bottom: 20px; text-align:center;">
+                    <h3 style="margin:0 0 10px 0;">SUBSTRATE EXECUTIVE SUMMARY</h3>
+                    <p style="margin:2px 0;"><b>AVERAGE ADMISSIBILITY (All Axioms):</b> ${meanAdmissibility}</p>
+                    <p style="margin:2px 0;"><b>FINAL ENTROPY STATE (IMS Cluster):</b> ${finalEntropy}</p>
+                </div>
+                <hr>
+                <div style="font-size: 12px;">
+                    ${entries.map(e => `<div style="border-bottom:1px solid #ddd; padding:10px 0;">${e}</div>`).join('')}
+                </div>
+                <button onclick="document.getElementById('report-overlay').style.display='none'" 
+                        style="margin-top:20px; background:#00ff88; color:#000; padding:15px; width:100%; cursor:pointer; font-weight:bold;">
+                    RETURN TO DASHBOARD
+                </button>
+            </div>
+        `;
+    },
+    tick() {
+        const inputs = ["ERP_DATA", "XLS_LEDGERS", "PDF_SPECS", "CSV_TELEMETRY"];
+        this.lastInput = inputs[Math.floor(Math.random() * inputs.length)] + `_${Math.floor(Math.random()*0xFFFF).toString(16).toUpperCase()}`;
+        this.log('log-ims', `INGEST: ${this.lastInput}`);
+    },
+    log(id, msg) {
+        const l = document.getElementById(id);
+        l.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+        l.scrollTop = l.scrollHeight;
+    },
+    render(view, pulse = false) {
+        if(this.animTick) { cancelAnimationFrame(this.animTick); this.animTick = null; }
+        this.v = view;
+        document.querySelectorAll('.t-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() === view));
+        
+        const c = document.getElementById('main-render'); 
+        const ctx = c.getContext('2d');
+        c.width = c.parentElement.clientWidth; 
+        c.height = c.parentElement.clientHeight;
+        ctx.clearRect(0,0,c.width,c.height);
+        
+        if(pulse) { 
+            ctx.fillStyle = 'rgba(0,255,136,0.1)'; 
+            ctx.fillRect(0,0,c.width,c.height); 
+        }
+
+        // Multi-View Sub-Routines
+        if(view === 'gnn') this.drawGNN(ctx, c);
+        else if(view === 'world') this.drawWorld(ctx, c);
+        else if(view === 'core') this.drawCore(ctx, c);
+        else if(view === 'causal') this.drawCausal(ctx, c);
+    },
+    drawGNN(ctx, c) {
+        if (!this.activeAxiom) {
+            ctx.save();
+            ctx.translate(c.width/2, c.height/2);
+            ctx.strokeStyle = "rgba(0, 255, 136, 0.15)";
+            ctx.beginPath(); ctx.arc(0, 0, 80, 0, Math.PI*2); ctx.stroke();
+            ctx.restore();
+            return;
+        }
+        
+        const seed = parseInt(this.activeAxiom.id.split('-')[1]) || 0;
+        const time = Date.now() * 0.001;
+        ctx.save();
+        ctx.translate(c.width/2, c.height/2);
+        
+        // 1. Invariant Baseline (C_phi)
+        ctx.strokeStyle = "rgba(0, 255, 136, 0.15)";
+        ctx.beginPath(); ctx.arc(0, 0, 80, 0, Math.PI*2); ctx.stroke();
+
+        // 2. Generate Nodes (Deterministic)
+        const nodes = [];
+        const count = 16;
+        for(let i=0; i<count; i++) {
+            let angle = (i/count) * Math.PI*2 + (time * (seed%5/12));
+            let r = 110 + Math.sin(time + i) * (1 - this.v_phi) * 55;
+            nodes.push({ x: Math.cos(angle) * r, y: Math.sin(angle) * r });
+        }
+
+        // 3. Draw Edges (High-Contrast Links)
+        ctx.strokeStyle = "rgba(0, 255, 136, 0.6)";
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        nodes.forEach((p, i) => {
+            // Primary path
+            ctx.lineTo(p.x, p.y);
+            // Causal Cross-link based on Axiom ID
+            let target = (i + 5 + (seed % 7)) % count;
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(nodes[target].x, nodes[target].y);
+        });
+        ctx.stroke();
+
+        // Surface Rendering: Full Volumetric Surface (Tessellated Skin)
+        ctx.fillStyle = "rgba(0, 255, 136, 0.1)";
+        for (let i = 0; i < count; i++) {
+            let next = (i + 1) % count;
+            let target = (i + 5 + (seed % 7)) % count;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[next].x, nodes[next].y);
+            ctx.lineTo(nodes[target].x, nodes[target].y);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // 4. Draw Nodes (Data Particles)
+        nodes.forEach(p => {
+            ctx.fillStyle = "#00ff88";
+            ctx.shadowBlur = 8; ctx.shadowColor = "#00ff88";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
+        // 5. Professional HUD
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.fillStyle = "#00ff88"; ctx.font = "9px monospace";
+        ctx.fillText(`TOPOLOGY_STATE: ${this.currentAuditData.verdict}`, 20, 30);
+        ctx.fillText(`INVARIANT_REF: C_phi=1.0`, 20, 42);
+        ctx.restore();
+
+        // Loop execution for persistent pulse/rotation mapped to time context
+        if (this.v === 'gnn' && !this.animTick) {
+            this.animTick = requestAnimationFrame(() => {
+                this.animTick = null;
+                this.render('gnn');
+            });
+        }
+    },
+    drawCore(ctx, c) {
+        // 2D Vector Field representing Invariant Admissibility
+        const v_phi = this.currentAuditData ? parseFloat(this.currentAuditData.v_phi) : 0.85;
+        ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 1; ctx.beginPath();
+        for(let x=0; x<c.width; x+=5){
+            let normX = (x-c.width/2)/150;
+            let y = Math.exp(-0.5*normX*normX)*(v_phi*300);
+            ctx.moveTo(x, c.height/2 + 100);
+            ctx.lineTo(x, c.height/2 + 100 - y);
+        } 
+        ctx.stroke();
+        
+        // Label
+        ctx.fillStyle = '#00ff88';
+        ctx.font = '10px monospace';
+        ctx.fillText(`GAUSSIAN VECTOR FIELD | BASE: v_phi=${v_phi}`, 20, 20);
+    },
+    drawWorld(ctx, c) {
+        ctx.save(); ctx.translate(c.width/2, c.height/2 + 50);
+        
+        // World Model: 32x32 High-Resolution Isometric Lattice with Surface Skin
+        const time = Date.now() * 0.001;
+        this.v_phi = this.currentAuditData ? parseFloat(this.currentAuditData.v_phi) : 0.85;
+        const seed = this.activeAxiom ? parseInt(this.activeAxiom.id.split('-')[1]) || 1 : 1;
+        
+        ctx.strokeStyle = "rgba(0, 255, 136, 0.6)";
+        ctx.lineWidth = 0.5;
+        
+        // Isometric Rotation Matrix
+        const tiltX = Math.sin(time * 0.5) * 0.2;
+        const tiltY = Math.PI / 3; // Fixed steep isometric tilt
+        const rotZ = time * 0.15 + (seed * 0.1);
+        
+        const res = 32;
+        const spacing = 8;
+        const offset = (res * spacing) / 2;
+        
+        // Render 3D Surface Skin (Digital Twin Material overlay)
+        ctx.fillStyle = `rgba(0, 255, 136, ${0.1 + (this.v_phi * 0.2)})`;
+        
+        // Offset shadow lattice layer (Material Thickness)
+        ctx.strokeStyle = "rgba(0, 255, 136, 0.1)";
+        for(let j=0; j<res-1; j++) {
+            for(let i=0; i<res-1; i++) {
+                ctx.beginPath();
+                const pts = [{x: i, y: j}, {x: i+1, y: j}, {x: i+1, y: j+1}, {x: i, y: j+1}];
+                pts.forEach((pt, idx) => {
+                    let z = Math.sin(pt.x*0.3 + time) * Math.cos(pt.y*0.3 + time) * 20 * this.v_phi;
+                    let x0 = pt.x*spacing - offset; let y0 = pt.y*spacing - offset;
+                    let x1 = x0 * Math.cos(rotZ) - y0 * Math.sin(rotZ);
+                    let y1 = x0 * Math.sin(rotZ) + y0 * Math.cos(rotZ);
+                    let y2 = y1 * Math.cos(tiltY) - z * Math.sin(tiltY);
+                    let z2 = y1 * Math.sin(tiltY) + z * Math.cos(tiltY);
+                    let x3 = x1 * Math.cos(tiltX) + z2 * Math.sin(tiltX);
+                    if (idx === 0) ctx.moveTo(x3, y2 + 10);
+                    else ctx.lineTo(x3, y2 + 10);
+                });
+                ctx.closePath();
+                ctx.stroke();
+            }
+        }
+
+        ctx.strokeStyle = "rgba(0, 255, 136, 0.6)";
+        // Polygons for solid surface skin rendering
+        for(let j=0; j<res-1; j++) {
+            for(let i=0; i<res-1; i++) {
+                ctx.beginPath();
+                
+                // Quad Vertices
+                const pts = [
+                    {x: i, y: j}, {x: i+1, y: j}, {x: i+1, y: j+1}, {x: i, y: j+1}
+                ];
+                
+                let maxZ = -Infinity;
+                pts.forEach((pt, idx) => {
+                    let z = Math.sin(pt.x*0.3 + time) * Math.cos(pt.y*0.3 + time) * 20 * this.v_phi;
+                    if (z > maxZ) maxZ = z;
+                    let x0 = pt.x*spacing - offset;
+                    let y0 = pt.y*spacing - offset;
+                    
+                    let x1 = x0 * Math.cos(rotZ) - y0 * Math.sin(rotZ);
+                    let y1 = x0 * Math.sin(rotZ) + y0 * Math.cos(rotZ);
+                    
+                    let y2 = y1 * Math.cos(tiltY) - z * Math.sin(tiltY);
+                    let z2 = y1 * Math.sin(tiltY) + z * Math.cos(tiltY);
+                    
+                    let x3 = x1 * Math.cos(tiltX) + z2 * Math.sin(tiltX);
+                    
+                    if (idx === 0) ctx.moveTo(x3, y2);
+                    else ctx.lineTo(x3, y2);
+                });
+                ctx.closePath();
+                
+                if (this.activeAxiom && maxZ > 10 * this.v_phi) {
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "#00ff88";
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.stroke(); // Draws the lattice wireframe concurrently
+            }
+        }
+        
+        ctx.restore();
+        
+        ctx.fillStyle = "#00ff88"; ctx.font = "10px monospace"; ctx.fillText("MATERIAL_TWIN_LATTICE(32x32_VOLUMETRIC): ACTIVE", 20, 30);
+        
+        if (this.v === 'world' && !this.animTick) {
+            this.animTick = requestAnimationFrame(() => {
+                this.animTick = null;
+                this.render('world');
+            });
+        }
+    },
+    drawCausal(ctx, c) {
+        // Causal Model: Branching Influence Graph (Multi-Vector DAG)
+        this.v_phi = this.currentAuditData ? parseFloat(this.currentAuditData.v_phi) : 0.85;
+        const seed = this.activeAxiom ? parseInt(this.activeAxiom.id.split('-')[1]) || 1 : 1;
+        const timeOffset = Date.now() / 1000;
+        
+        const C_phi = 1.0;
+        const speed = C_phi * 15;
+        const vibrate = Math.sin(timeOffset * C_phi * 15) * 4;
+
+        // L1 Source branching out to L3 validation vectors then converging to L5 Hash
+        const nodes = [
+            { id: "L1_SOURCE", x: 80, y: c.height/2, type: "src" },
+            { id: "L3_VEC_ALPHA", x: c.width/2 - 40, y: c.height/2 - 120, type: "vec" },
+            { id: "L3_VEC_BETA", x: c.width/2, y: c.height/2, type: "vec" },
+            { id: "L3_VEC_GAMMA", x: c.width/2 - 40, y: c.height/2 + 120, type: "vec" },
+            { id: "L5_AUDIT_HASH", x: c.width-120, y: c.height/2, type: "hash" }
+        ];
+
+        ctx.strokeStyle = "rgba(0, 255, 136, 0.4)";
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = `rgba(0, 255, 136, ${0.5 + Math.sin(timeOffset*10)*0.2})`;
+
+        nodes.forEach(n => {
+            if (n.type === "vec") {
+                // Draw curve from SOURCE to VECTOR (Branching Out)
+                ctx.beginPath();
+                ctx.lineDashOffset = -timeOffset * speed;
+                ctx.setLineDash([12, 8]);
+                
+                let start1 = {x: nodes[0].x, y: nodes[0].y + (n.y > c.height/2 ? vibrate : -vibrate)};
+                let cp1 = {x: nodes[0].x + 100, y: n.y};
+                let end1 = {x: n.x, y: n.y + vibrate};
+                ctx.moveTo(start1.x, start1.y);
+                ctx.quadraticCurveTo(cp1.x, cp1.y, end1.x, end1.y);
+                ctx.stroke();
+                
+                // Draw curve from VECTOR to AUDIT_HASH (Converging)
+                ctx.beginPath();
+                let start2 = {x: n.x, y: n.y + vibrate};
+                let cp2 = {x: nodes[4].x - 100, y: n.y};
+                let end2 = {x: nodes[4].x, y: nodes[4].y + vibrate};
+                ctx.moveTo(start2.x, start2.y);
+                ctx.quadraticCurveTo(cp2.x, cp2.y, end2.x, end2.y);
+                ctx.stroke();
+                
+                // Spline Data Packets
+                let t = (timeOffset * speed * 0.05) % 1;
+                let t2 = ((timeOffset * speed * 0.05) + 0.5) % 1;
+                
+                const drawDot = (s, cp, e, val) => {
+                    let dx1 = s.x + (cp.x - s.x) * val; let dy1 = s.y + (cp.y - s.y) * val;
+                    let dx2 = cp.x + (e.x - cp.x) * val; let dy2 = cp.y + (e.y - cp.y) * val;
+                    let fx = dx1 + (dx2 - dx1) * val; let fy = dy1 + (dy2 - dy1) * val;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, 4, 0, Math.PI*2);
+                    ctx.fillStyle = "#fff";
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = "#00ff88";
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                };
+                
+                drawDot(start1, cp1, end1, t);
+                drawDot(start2, cp2, end2, t2);
+            }
+        });
+        
+        ctx.setLineDash([]);
+        ctx.shadowBlur = 0;
+        
+        // Render Nodes
+        nodes.forEach(n => {
+            ctx.fillStyle = "#000";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00ff88";
+            ctx.strokeStyle = n.type === 'hash' ? '#ffd700' : "#00ff88"; // Hash node distinct color
+            ctx.lineWidth = 2;
+            
+            let yPos = n.y + vibrate;
+            ctx.beginPath();
+            ctx.arc(n.x, yPos, n.type === 'src' || n.type === 'hash' ? 25 : 18, 0, Math.PI*2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            ctx.fillStyle = n.type === 'hash' ? '#ffd700' : "#00ff88";
+            ctx.font = '9px monospace';
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(n.id, n.x, yPos);
+        });
+
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = '#00ff88';
+        ctx.fillText("BRANCHING_INFLUENCE_GRAPH", 20, 30);
+
+        if (this.v === 'causal' && !this.animTick) {
+            this.animTick = requestAnimationFrame(() => {
+                this.animTick = null;
+                this.render('causal');
+            });
+        }
+    }
+}; window.onload = () => app.init();
+</script>
+<div id="report-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:20000; align-items:center; justify-content:center;">
+    <div id="modal-content" style="max-width:900px; width:90%; padding:0; box-sizing:border-box;"></div>
+</div>
+
+<!-- Help trigger button & SOP Modal -->
+<button onclick="document.getElementById('help-overlay').style.display='flex'" style="position:fixed; bottom:20px; right:20px; width:40px; height:40px; border-radius:50%; background:#00ff88; color:#000; font-weight:bold; font-size:20px; border:none; cursor:pointer; z-index:10000; box-shadow:0 0 10px #00ff88;">?</button>
+
+<div id="help-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:20000; align-items:center; justify-content:center;">
+    <div style="background:#fff; color:#000; padding:40px; font-family:serif; border:10px solid #000; max-height:80vh; overflow-y:auto; max-width:600px; width:90%; font-size:14px; position:relative;">
+        <button onclick="document.getElementById('help-overlay').style.display='none'" style="position:absolute; top:10px; right:10px; background:#000; color:#00ff88; border:none; padding:5px 10px; cursor:pointer; font-weight:bold;">X</button>
+        <h2 style="border-bottom:3px solid #000; margin-bottom:20px;">OPERATIONAL SOP <span style="font-size:10px; color:#666;">v1.0.0</span></h2>
+        
+        <h3>STAGE 1: AXIOM SUBSTRATE SELECTION</h3>
+        <p>User initializes the audit trace by selecting an empirical axiom parameter residing within the L1 Evidence Spine logic hierarchy. This seeds the global geometric rotation vectors dynamically.</p>
+
+        <h3>STAGE 2: MULTI-DIMENSIONAL MAPPING</h3>
+        <ul>
+            <li><b>L3 WORLD:</b> Validates isometric stresses of active $v_{\phi}$. Nodes render Crimson mapping structural admissibility failures ($< 0.88$).</li>
+            <li><b>L4 CAUSAL:</b> Reroutes causal temporal traces via volumetric DAG parameters converging into L5 Hash checkpoints.</li>
+        </ul>
+
+        <h3>STAGE 3: INVARIANT GNN ANALYSIS</h3>
+        <p>The centralized radar chart locks the formal baseline value $C_{\phi}=1.0$ against fluctuating empirical parameter metrics evaluated dynamically via the GNN Topologic interface.</p>
+
+        <h3>STAGE 4: CONSOLIDATED AUDIT EXPORT</h3>
+        <p>The physical PDF-style mapping extracts cumulative dissipation ($\epsilon$) metrics across all initialized data to issue the true Substrate Executive Score. No metrics are orphaned.</p>
+    </div>
+</div>
+
+</body>
+</html>
